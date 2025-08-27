@@ -3,7 +3,12 @@
 // Stores totals per-UTC-day in chrome.storage.local under:
 // { statsByDay: { [YYYY-MM-DD]: { [domain]: seconds } } }
 
-const STORAGE_KEYS = { STATS: 'statsByDay' };
+const STORAGE_KEYS = { 
+  STATS: 'statsByDay',
+  LAST_UPLOAD: 'lastUploadIso',
+  UPLOAD_URL: 'uploadUrl',     // from options page input
+  DEVICE_NAME: 'deviceName'    // from options page input
+};
 
 const STATE = {
   current: {
@@ -17,6 +22,7 @@ const STATE = {
   },
   _recomputePending: false, // debounce to coalesce event bursts
 };
+function nowIso() { return new Date().toISOString(); }
 
 // ---- Date helpers (UTC) ----
 function todayKeyUTC() { return new Date().toISOString().slice(0, 10); }
@@ -48,6 +54,88 @@ async function addSeconds(domain, seconds, dayKey = todayKeyUTC()) {
   await chrome.storage.local.set({ [STORAGE_KEYS.STATS]: stats });
 }
 
+
+// ---- Upload helpers ----
+
+// Build the flat records array: one row per (date, domain)
+async function buildRecords() {
+  const { [STORAGE_KEYS.STATS]: stats = {} } = await chrome.storage.local.get(STORAGE_KEYS.STATS);
+  const days = Object.keys(stats).sort();
+  const records = [];
+  for (const day of days) {
+    const byDomain = stats[day] || {};
+    for (const [domain, seconds] of Object.entries(byDomain)) {
+      records.push({ date: day, domain, seconds });
+    }
+  }
+  // Sort stable: by date then domain
+  records.sort((a, b) => a.date === b.date ? a.domain.localeCompare(b.domain) : a.date.localeCompare(b.date));
+  return records;
+}
+
+// POST records to server. Returns true on success.
+async function uploadData() {
+  const conf = await chrome.storage.local.get([STORAGE_KEYS.UPLOAD_URL, STORAGE_KEYS.DEVICE_NAME]);
+  const uploadUrl = conf[STORAGE_KEYS.UPLOAD_URL];
+  const deviceName = conf[STORAGE_KEYS.DEVICE_NAME];
+  if (!uploadUrl) {
+    console.warn('[TimeTracker] uploadData: no uploadUrl configured');
+    return false;
+  }
+
+  if (!deviceName) {
+    console.warn('[TimeTracker] uploadData: no deviceName configured');
+    return false;
+  }
+
+  const records = await buildRecords();
+  const payload = {
+    deviceName,
+    generatedAt: nowIso(),
+    recordCount: records.length,
+    records, // [{ date, domain, seconds }]
+  };
+
+  try {
+    const res = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      // credentials omitted intentionally; add if your server requires it
+    });
+    if (!res.ok) {
+      console.warn('[TimeTracker] uploadData: server returned non-OK', res.status, await safeText(res));
+      return false;
+    }
+    // Mark last upload time
+    await chrome.storage.local.set({ [STORAGE_KEYS.LAST_UPLOAD]: nowIso() });
+    console.log('[TimeTracker] uploadData: success, sent', records.length, 'records');
+    return true;
+  } catch (e) {
+    console.warn('[TimeTracker] uploadData: fetch failed', e);
+    return false;
+  }
+}
+
+async function safeText(res) {
+  try { return await res.text(); } catch { return '<no-body>'; }
+}
+
+// Check if it’s time to upload: > 12 hours since last upload (or never uploaded)
+async function maybeUploadIfDue(trigger = 'alarm') {
+  const { [STORAGE_KEYS.LAST_UPLOAD]: lastIso } = await chrome.storage.local.get(STORAGE_KEYS.LAST_UPLOAD);
+  const now = Date.now();
+  const last = lastIso ? Date.parse(lastIso) : 0;
+  const hours = (now - last) / (1000 * 60 * 60);
+  if (!lastIso || hours > 12) {
+    console.log(`[TimeTracker] maybeUploadIfDue (${trigger}): due (last=${lastIso || 'never'}, ${hours.toFixed(2)}h)`);
+    await uploadData();
+  } else {
+    // Not due; do nothing
+    // console.log(`[TimeTracker] maybeUploadIfDue (${trigger}): not due (${hours.toFixed(2)}h)`);
+  }
+}
+
 // ---- Icon ----
 function updateIcon(active) {
   const path = active
@@ -65,7 +153,7 @@ function stopTiming(reason = 'unknown') {
 
   // Sanity guard: if state is inconsistent, bail safely
   if (!domain || !startMs) {
-    console.warn('[DTT] stopTiming: inconsistent state', { domain, startMs, reason });
+    console.warn('[TimeTracker] stopTiming: inconsistent state', { domain, startMs, reason });
     STATE.current.isTiming = false;
     STATE.current.startMs = null;
     updateIcon(false);
@@ -99,13 +187,13 @@ function stopTiming(reason = 'unknown') {
   STATE.current.startMs = null;
   STATE.current.isTiming = false;
   updateIcon(false);
-  //console.log('[DTT] stopTiming:', reason);
+  //console.log('[TimeTracker] stopTiming:', reason);
 }
 
 // ---- Central, idempotent decision-maker ----
 // Decides whether we should be timing right now and starts/stops accordingly.
 async function recomputeTracking(reason = 'event') {
-  //console.log('[DTT] recomputeTracking:', reason);
+  //console.log('[TimeTracker] recomputeTracking:', reason);
   // Debounce bursts (activated -> updated -> focus, etc.)
   if (STATE._recomputePending) return;
   STATE._recomputePending = true;
@@ -120,7 +208,7 @@ async function recomputeTracking(reason = 'event') {
         const arr = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
         activeTab = arr && arr[0];
       } catch (e) {
-        console.warn('[DTT] tabs.query failed:', e);
+        console.warn('[TimeTracker] tabs.query failed:', e);
       }
     }
     let newDomain = null, newTabId = null, newWindowId = null;
@@ -156,21 +244,34 @@ async function recomputeTracking(reason = 'event') {
     STATE.current.startMs = Date.now();
     STATE.current.isTiming = true;
     updateIcon(true);
-    //console.log('[DTT] startTiming:', newDomain, 'reason:', reason);
+    //console.log('[TimeTracker] startTiming:', newDomain, 'reason:', reason);
   }, 0);
 }
 
-// ---- Idle detection setup ----
+// ---- Idle detection + alarms ----
 chrome.runtime.onInstalled.addListener(() => {
   updateIcon(false);
-  chrome.idle.setDetectionInterval(60); // seconds (min 15)
+  chrome.idle.setDetectionInterval(60);
+  scheduleHourlyUploadCheck();
   recomputeTracking('installed');
 });
 
 chrome.runtime.onStartup.addListener(() => {
   updateIcon(false);
   chrome.idle.setDetectionInterval(60);
+  scheduleHourlyUploadCheck();
   recomputeTracking('startup');
+});
+
+// Create/refresh a 60-minute repeating alarm
+function scheduleHourlyUploadCheck() {
+  chrome.alarms.create('hourlyUploadCheck', { periodInMinutes: 60 });
+}
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === 'hourlyUploadCheck') {
+    maybeUploadIfDue('alarm').catch(console.warn);
+  }
 });
 
 // ---- Event wiring ----
@@ -209,7 +310,7 @@ chrome.windows.onFocusChanged.addListener(async (windowId) => {
         return;
       }
     } catch (e) {
-      console.warn('[DTT] windows.get failed:', e);
+      console.warn('[TimeTracker] windows.get failed:', e);
     }
   }
   STATE.current.isFocused = (windowId !== chrome.windows.WINDOW_ID_NONE);

@@ -3,7 +3,7 @@
     "name": "Time Tracker",
     "version": "1.0.0",
     "description": "Track and reports time spent per domain across tabs and windows",
-    "permissions": ["tabs", "storage", "idle"],
+    "permissions": ["tabs", "storage", "idle", "alarms"],
     "host_permissions": ["<all_urls>"],
     "background": { "service_worker": "background.js", "type": "module" },
     "icons": {
