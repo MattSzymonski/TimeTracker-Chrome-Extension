@@ -1,0 +1,1 @@
+To see the extension `console.log()` go to `chrome://extensions/` and click "service worker" link. It will open separate developer console.

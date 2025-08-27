@@ -1,0 +1,291 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Time Tracker — Options</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            margin: 0; 
+            min-width: 320px; 
+            background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+            color: #e0e0e0; 
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #404040;
+        }
+
+        h1 { 
+            font-size: 28px; 
+            margin: 0; 
+            font-weight: 600;
+            color: #ffffff;
+            text-transform: uppercase;
+        }
+
+        h2 {
+            font-size: 22px;
+            font-weight: 600;
+            margin: 32px 0 16px 0;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .section {
+            margin-bottom: 52px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        label {
+            font-weight: 500;
+            color: #e0e0e0;
+            font-size: 13px;
+        }
+
+        select, input[type="text"] {
+            padding: 10px 12px;
+            border: 1px solid #404040;
+            border-radius: 6px;
+            font-size: 14px;
+            background: rgba(255,255,255,0.03);
+            color: #e0e0e0;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        select:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #727272;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+        }
+
+        button {
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.08);
+            color: #ffffff;
+            border: 1px solid #404040;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            background: rgba(255,255,255,0.12);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button.secondary {
+            background: rgba(255,255,255,0.05);
+        }
+
+        button.secondary:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        button.danger {
+            background: #dc2626;
+            border-color: #dc2626;
+        }
+
+        button.danger:hover {
+            background: #b91c1c;
+        }
+
+        .info-text {
+            color: #ffffff; 
+            font-size: 13px;
+            margin-top: 8px;
+            margin-right: 8px;
+        }
+
+        table { 
+            width: 100%; 
+            border-collapse: collapse;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        th { 
+            font-size: 13px; 
+            color: #ffffff; 
+            background: rgba(255,255,255,0.08);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: left; 
+            padding: 8px 16px; 
+            border-bottom: 1px solid #404040;
+        }
+
+        td {
+            font-size: 14px;
+            text-align: left; 
+            padding: 8px 16px; 
+            border-bottom: 1px solid #404040;
+            color: #e0e0e0;
+        }
+
+        tbody tr:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+
+        .input-group input {
+            flex: 1;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 16px;
+            }
+
+            .container {
+                padding: 12px;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .controls > * {
+                width: 100%;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Time Tracker Options</h1>
+        </div>
+
+        <div class="section">
+            <div class="controls">
+                <label for="range">Export Range:</label>
+                <select id="range">
+                    <option value="today">Today</option>
+                    <option value="7">Last 7 days</option>
+                    <option value="30">Last 30 days</option>
+                    <option value="all">All time</option>
+                </select>
+                <button id="exportCsv">Export CSV</button>
+                <button id="reset" class="danger">Reset Data</button>
+            </div>
+
+            <p class="info-text">
+                Export produces two CSVs: daily totals per domain, and aggregated totals across the selected range.
+            </p>
+        </div>
+
+        <div class="section">
+            <h2>Info</h2>
+            <h3>Unsent Data</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Domain</th>
+                        <th>Seconds</th>
+                    </tr>
+                </thead>
+                <tbody id="rows"></tbody>
+            </table>
+            <h3 style="margin-top: 20px;">Data Upload Info</h3>
+            <div style="display: flex">
+                <p class="info-text">Last Data Upload Date: </p>
+                <p class="info-text">—</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Configuration</h2>
+            
+            <div class="form-group">
+                <label for="uploadUrl">Server Upload URL</label>
+                <div class="input-group">
+                    <input type="text" id="uploadUrl" placeholder="https://example.com/receive" />
+                    <button id="saveUrl" class="secondary">Save</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="deviceName">Device Name</label>
+                <div class="input-group">
+                    <input type="text" id="deviceName" placeholder="My Laptop" />
+                    <button id="saveDevice" class="secondary">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="options.js"></script>
+</body>
+</html>

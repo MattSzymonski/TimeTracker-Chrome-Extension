@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Time Tracker</title>
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+                margin: 0; 
+                min-width: 320px; 
+                background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+                color: #e0e0e0; 
+                box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+            }
+            .container {
+                padding: 16px;
+            }
+            .header { 
+                display: flex; 
+                justify-content: space-between; 
+                align-items: center; 
+                margin-bottom: 16px;
+                padding-bottom: 12px;
+                border-bottom: 2px solid #404040;
+            }
+            h1 { 
+                font-size: 18px; 
+                margin: 0; 
+                font-weight: 600;
+                color: #ffffff;
+                text-transform: uppercase;
+            }
+            #current { 
+                font-size: 13px; 
+                color: #b0b0b0; 
+                margin-bottom: 16px;
+                padding: 8px 12px;
+                background: rgba(255,255,255,0.05);
+                border-radius: 6px;
+            }
+            table { 
+                width: 100%; 
+                border-collapse: collapse;
+                background: rgba(255,255,255,0.03);
+                border-radius: 8px;
+                overflow: hidden;
+            }
+            th, td { 
+                text-align: left; 
+                padding: 8px 16px; 
+                border-bottom: 1px solid #404040;
+            }
+            th { 
+                font-size: 13px; 
+                color: #ffffff; 
+                background: rgba(255,255,255,0.08);
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            td {
+                font-size: 14px;
+            }
+            tbody tr:hover {
+                background: rgba(255,255,255,0.05);
+            }
+            tbody tr:last-child td {
+                border-bottom: none;
+            }
+            .muted { 
+                color: #888; 
+            }
+            .footer {
+                margin-top: 16px;
+                padding-top: 16px;
+                border-top: 1px solid #404040;
+                text-align: center;
+            }
+            .options-link {
+                color: #727272;
+                text-decoration: none;
+                font-size: 13px;
+                transition: color 0.2s ease;
+            }
+            .options-link:hover {
+                color: #c0c0c0;
+                text-decoration: underline;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Today</h1>
+                <h1 id="total"></h1>
+            </div>
+            <div id="current" class="muted">—</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Domain</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody id="rows"></tbody>
+            </table>
+            
+            <div class="footer">
+                <a href="options.html" class="options-link" target="_blank">Options</a>
+            </div>
+        </div>
+        <script src="popup.js"></script>
+    </body>
+</html>
