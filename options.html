@@ -229,19 +229,12 @@
 
         <div class="section">
             <div class="controls">
-                <label for="range">Export Range:</label>
-                <select id="range">
-                    <option value="today">Today</option>
-                    <option value="7">Last 7 days</option>
-                    <option value="30">Last 30 days</option>
-                    <option value="all">All time</option>
-                </select>
-                <button id="exportCsv">Export CSV</button>
+                <button id="exportJson">Export JSON</button>
                 <button id="reset" class="danger">Reset Data</button>
             </div>
 
             <p class="info-text">
-                Export produces two CSVs: daily totals per domain, and aggregated totals across the selected range.
+                Export produces two JSON files: daily totals per domain, and aggregated totals across the selected range.
             </p>
         </div>
 

@@ -18,9 +18,8 @@ function filterRange(stats, range) {
 }
 
 async function render() {
-    const range = document.getElementById('range').value;
     const stats = await loadStats();
-    const days = filterRange(stats, range);
+    const days = Object.keys(stats).sort();
     const tbody = document.getElementById('rows');
     tbody.innerHTML = '';
 
@@ -39,31 +38,25 @@ async function sync() {
     
 }
 
-async function exportCsv() {
-    console.log("Exporting CSV");
-    const range = document.getElementById('range').value;
+async function exportJson() {
+    console.log("Exporting all JSON");
     const stats = await loadStats();
-    const days = filterRange(stats, range);
+    const days = Object.keys(stats).sort();
 
-    // Detailed daily CSV
-    const detailedRows = [['date', 'domain', 'seconds']];
-    const totals = {}; // aggregate across selected range
+    const rows = [];
 
     for (const day of days) {
         const byDomain = stats[day] || {};
         for (const [domain, seconds] of Object.entries(byDomain)) {
-            detailedRows.push([day, domain, seconds]);
-            totals[domain] = (totals[domain] || 0) + seconds;
+            rows.push({ date: day, domain, seconds });
         }
     }
 
-    const aggregateRows = [['domain', 'seconds']];
-    for (const [domain, seconds] of Object.entries(totals).sort((a, b) => b[1] - a[1])) {
-        aggregateRows.push([domain, seconds]);
-    }
+    rows.sort((a, b) => 
+        a.date === b.date ? a.domain.localeCompare(b.domain) : a.date.localeCompare(b.date)
+    );
 
-    download(`domain-time-detailed-${range}.csv`, makeCsv(detailedRows));
-    download(`domain-time-aggregate-${range}.csv`, makeCsv(aggregateRows));
+    download(`domain-time.json`, JSON.stringify(rows, null, 2));
 }
 
 async function resetData() {
@@ -74,9 +67,7 @@ async function resetData() {
 }
 
 // Wire up
-
-document.getElementById('range').addEventListener('change', render);
-document.getElementById('exportCsv').addEventListener('click', exportCsv);
+document.getElementById('exportJson').addEventListener('click', exportJson);
 document.getElementById('reset').addEventListener('click', resetData);
 
 render();
